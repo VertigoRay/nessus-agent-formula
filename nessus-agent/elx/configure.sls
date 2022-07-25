@@ -7,50 +7,50 @@
 #
 ###########################################################################
 {%- from tpldir ~ '/map.jinja' import nessus with context %}
-{%- set chkFile = '/etc/tenable_tag' %}
-{%- set staleDbs = salt.file.find('/opt/nessus_agent/var/nessus/', maxdepth=1, type='f', name='*.db') %}
-{%- set linkStr =
-        nessus.sbin_file ~
-        ' agent link --key=' ~ nessus.nessus_key ~
-        ' --host=' ~ nessus.nessus_server ~
-        ' --port=' ~ nessus.nessus_port ~
-        ' --groups=' ~ nessus.nessus_groups
+# {%- set chkFile = '/etc/tenable_tag' %}
+# {%- set staleDbs = salt.file.find('/opt/nessus_agent/var/nessus/', maxdepth=1, type='f', name='*.db') %}
+{%- set linkStr = nessus.sbin_file ~
+  ' agent link --key=' ~ nessus.nessus_key ~
+  ' --host=' ~ nessus.nessus_server ~
+  ' --port=' ~ nessus.nessus_port ~
+  ' --groups=' ~ nessus.nessus_groups
 %}
 
-{%- if staleDbs %}
-Unlink Stale Agent-config:
-  cmd.run:
-    - name: '{{ nessus.sbin_file }} agent unlink'
-    - success_retcodes:
-      - 0
-      - 2
+# {%- if staleDbs %}
+# Unlink Stale Agent-config:
+#   cmd.run:
+#     - name: '{{ nessus.sbin_file }} agent unlink'
+#     - success_retcodes:
+#       - 0
+#       - 2
 
-Stop Nessus Agent:
-  service.dead:
-    - name: {{ nessus.package | lower }}
-    - require:
-      - cmd: Unlink Stale Agent-config
+# Stop Nessus Agent:
+#   service.dead:
+#     - name: {{ nessus.package | lower }}
+#     - require:
+#       - cmd: Unlink Stale Agent-config
 
-  {%- for staleDb in staleDbs %}
-Nuke Stale {{ staleDb }} file:
-  file.absent:
-    - name: '{{ staleDb }}'
-    - require:
-      - Stop Nessus Agent
-    - require_in:
-      - Configure Nessus Agent
-  {%- endfor %}
-{%- endif %}
+#   {%- for staleDb in staleDbs %}
+# Nuke Stale {{ staleDb }} file:
+#   file.absent:
+#     - name: '{{ staleDb }}'
+#     - require:
+#       - Stop Nessus Agent
+#     - require_in:
+#       - Configure Nessus Agent
+#   {%- endfor %}
+# {%- endif %}
 
-Handle {{ chkFile }} file:
-  file.absent:
-    - name: '{{ chkFile }}'
+# Handle {{ chkFile }} file:
+#   file.absent:
+#     - name: '{{ chkFile }}'
 
 Configure Nessus Agent:
   cmd.run:
     - name: {{ linkStr }}
-    - require:
-      - file: Handle {{ chkFile }} file
+    # - require:
+    #   - file: Handle {{ chkFile }} file
+    - unless: '[[ "$(/opt/nessus_agent/sbin/nessuscli agent status | grep ''^Running:'' | awk -F: ''{print $2}'' | xargs)" == "Yes" ]] && [[ "$(/opt/nessus_agent/sbin/nessuscli agent status | grep ''^Link status:'' | awk -F: ''{print $2}'' | xargs)" == "Connected to {{ nessus.nessus_server }}" ]] && echo 1'
 
 Start Nessus Agent:
   service.running:

@@ -27,12 +27,19 @@ Create Sym-link To Log Dir:
     - require:
       - file: Pre-Create Nessus Log Directory
 
+Download Nessus Package:
+  cmd.run:
+    - name: curl -o {{ nessus.package_file }} -L {{ nessus.package_url }}
+    - creates: {{ nessus.package_file }}
+    - skip_verify: True
+
 Install Nessus Package:
   pkg.installed:
     - sources:
-      - {{ nessus.package }}: {{ nessus.package_url }}
+      - {{ nessus.package }}: {{ nessus.package_file }}
     - require:
       - file: Create Sym-link To Log Dir
+      - cmd: Download Nessus Package
     - skip_verify: True
 
 Pre-Create Nessus Log Directory:
