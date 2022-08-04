@@ -50,7 +50,7 @@ Configure Nessus Agent:
     - name: {{ linkStr }}
     # - require:
     #   - file: Handle {{ chkFile }} file
-    - unless: '[[ "$(/opt/nessus_agent/sbin/nessuscli agent status | grep ''^Running:'' | awk -F: ''{print $2}'' | xargs)" == "Yes" ]] && [[ "$(/opt/nessus_agent/sbin/nessuscli agent status | grep ''^Link status:'' | awk -F: ''{print $2}'' | xargs)" == "Connected to {{ nessus.nessus_server }}" ]] && echo 1'
+    - unless: '[[ "$({{ nessus.sbin_file }} agent status | grep ''^Running:'' | awk -F: ''{print $2}'' | xargs)" == "Yes" ]] && [[ "$({{ nessus.sbin_file }} agent status | grep ''^Link status:'' | awk -F: ''{print $2}'' | xargs)" == "Connected to {{ nessus.nessus_server }}" ]] && echo 1'
 
 Start Nessus Agent:
   service.running:
